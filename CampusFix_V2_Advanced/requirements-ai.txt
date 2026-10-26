@@ -1,0 +1,2 @@
+# Offline photo screening uses Pillow; no AI model packages or downloads are required.
+-r requirements.txt

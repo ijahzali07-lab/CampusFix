@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <div class="eyebrow">{% if is_staff %}MAINTENANCE CONTROL CENTRE{% else %}YOUR CAMPUS REPORTS{% endif %}</div>
+    <h1>{% if is_staff %}Fault dashboard{% else %}My reports{% endif %}</h1>
+    <p>{% if is_staff %}Review, prioritize, assign, and track campus issues.{% else %}Keep an eye on the status of every fault you have reported.{% endif %}</p>
+  </div>
+  <a class="btn primary" href="{{ url_for('report_fault') }}">＋ Report a fault</a>
+</div>
+<form class="filter-bar" method="get">
+  <div class="search-field"><span>⌕</span><input name="q" value="{{ filters.get('q','') }}" placeholder="Search issue, description, location..."></div>
+  <select name="status"><option value="">All statuses</option>{% for s in statuses %}<option value="{{ s }}" {% if filters.get('status')==s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+  <select name="priority"><option value="">All priorities</option>{% for p in ['Critical','High','Medium','Low'] %}<option value="{{ p }}" {% if filters.get('priority')==p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select>
+  <select name="category"><option value="">All categories</option>{% for c in categories %}<option value="{{ c }}" {% if filters.get('category')==c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+  <button class="btn secondary" type="submit">Filter</button><a class="clear-link" href="{{ url_for('dashboard') }}">Clear</a>
+</form>
+<div id="liveStatus" class="results-line"><span><b>{{ faults|length }}</b> report(s) found</span><span class="muted">Prioritised by urgency · Live updates check every 30 seconds</span></div>
+{% if faults %}
+<div class="fault-list">
+{% for f in faults %}
+  <a class="fault-row" href="{{ url_for('fault_detail', fault_id=f.id) }}">
+    <div class="fault-priority-bar {{ f.priority|lower }}"></div>
+    <div class="fault-main">
+      <div class="fault-title-line"><h3>#{{ f.id }} · {{ f.title }}</h3><span class="status {{ f.status|lower|replace(' ','-') }}">{{ f.status }}</span></div>
+      <p>{{ f.description|truncate(150) }}</p>
+      {% if f.photo %}
+      <div class="dashboard-photo" style="margin:10px 0;display:flex;align-items:center;gap:10px">
+        <img src="{{ url_for('uploaded_photo', filename=f.photo) }}" alt="Photo attached to fault #{{ f.id }}" loading="lazy" style="width:88px;height:66px;object-fit:cover;border-radius:8px;border:1px solid var(--border,#334155)" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+        <span class="muted" style="display:none">Photo unavailable. Open report details for more information.</span>
+        <small class="muted">Attached photo</small>
+      </div>
+      {% endif %}
+      <div class="fault-meta"><span>⌖ {{ f.location }}{% if f.room %} · {{ f.room }}{% endif %}</span><span>▧ {{ f.category }}</span><span>◷ {{ f.updated_at }}</span>{% if is_staff %}<span>♙ {{ f.reporter_name }}</span>{% endif %}</div>
+    </div>
+    <div class="fault-side"><span class="priority {{ f.priority|lower }}">{{ f.priority }} priority</span>{% if f.assigned_to %}<small>Assigned: {{ f.assigned_to }}</small>{% endif %}<span class="arrow">→</span></div>
+  </a>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty-state"><div class="empty-icon">⌕</div><h3>No matching reports</h3><p>Try changing your filters or submit a new fault report.</p><a class="btn primary" href="{{ url_for('report_fault') }}">Report a fault</a></div>
+{% endif %}
+<script>
+(() => {
+  let signature = '';
+  const poll = async () => {
+    try {
+      const response = await fetch('{{ url_for("api_updates") }}', {headers: {'Accept':'application/json'}, cache:'no-store'});
+      if (!response.ok) return;
+      const data = await response.json();
+      const next = JSON.stringify(data.reports.map(r => [r.id,r.status,r.priority,r.updated_at]));
+      if (signature && next !== signature) {
+        const note = document.getElementById('liveStatus');
+        if (note) note.innerHTML = '<span><b>Updates detected</b></span><button class="btn secondary" onclick="location.reload()" type="button">Refresh dashboard</button>';
+      }
+      signature = next;
+    } catch (_) {}
+  };
+  poll();
+  setInterval(poll, 30000);
+})();
+</script>
+{% endblock %}

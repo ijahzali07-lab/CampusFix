@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% block title %}Manage staff{% endblock %}{% block content %}
+<div class="page-heading"><div><div class="eyebrow">ADMIN ONLY</div><h1>Manage staff accounts</h1><p>Only an administrator can create staff or additional admin accounts. Public registration always creates a student account.</p></div></div>
+<div class="two-column-layout">
+  <form class="form-card" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="eyebrow">CREATE VERIFIED ACCOUNT</div><h2>Add staff member</h2>
+    <label>Full name<input name="name" required maxlength="100" placeholder="Staff member name"></label>
+    <label>College email<input type="email" name="email" required maxlength="254" placeholder="staff@college.edu"></label>
+    <label>Temporary password<input type="password" name="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></label>
+    <label>Account role<select name="role"><option value="staff">Staff — manage faults and photo reviews</option><option value="admin">Admin — full administration access</option></select></label>
+    <button class="btn primary" type="submit">Create account</button>
+    <p class="muted">Verify the person's identity and college email before creating an account. Share the password privately and ask them to change it after signing in.</p>
+  </form>
+  <section class="form-card"><div class="eyebrow">AUTHORIZED ACCOUNTS</div><h2>Staff and admins</h2>
+  {% if staff_members %}<div class="fault-list">{% for member in staff_members %}<div class="fault-row"><div class="fault-main"><h3>{{ member.name }}</h3><p>{{ member.email }}</p><div class="fault-meta"><span>{{ member.role|title }}</span><span>Created {{ member.created_at }}</span></div></div></div>{% endfor %}</div>{% else %}<p class="muted">No staff accounts yet.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

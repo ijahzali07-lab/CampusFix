@@ -1,0 +1,46 @@
+{% extends "base.html" %}{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <div class="eyebrow"><span class="pulse"></span> CAMPUS FACILITY SUPPORT</div>
+    <h1>See a problem?<br><span>Get it fixed.</span></h1>
+    <p>Report broken equipment, unsafe facilities, and maintenance issues. Track progress from the first report to resolution.</p>
+    <div class="hero-actions">
+      {% if current_user %}<a class="btn primary" href="{{ url_for('report_fault') }}">＋ Report a fault</a><a class="btn secondary" href="{{ url_for('dashboard') }}">View dashboard</a>
+      {% else %}<a class="btn primary" href="{{ url_for('register') }}">Get started <span>→</span></a><a class="btn secondary" href="{{ url_for('login') }}">Sign in</a>{% endif %}
+    </div>
+    <div class="trust-row"><span>✓ Simple reporting</span><span>✓ Priority-based tracking</span><span>✓ Clear updates</span></div>
+  </div>
+  <div class="hero-visual">
+    <div class="visual-glow"></div>
+    <div class="ticket-card">
+      <div class="ticket-top"><span class="ticket-icon">⚡</span><span class="status-chip in-progress">IN PROGRESS</span></div>
+      <div class="ticket-label">FAULT REPORT · #0248</div><h3>Projector not working</h3>
+      <p>Academic Block · Room 204</p>
+      <div class="ticket-progress"><span></span></div>
+      <div class="ticket-bottom"><span>Maintenance team assigned</span><b>75%</b></div>
+    </div>
+    <div class="floating-note"><span class="note-icon">✓</span><div><b>Issue tracked</b><small>Every update in one place</small></div></div>
+    <div class="visual-dots">✳</div>
+  </div>
+</section>
+<section class="stats-grid">
+  <div class="stat-card"><span class="stat-icon blue">▤</span><div><small>Total reports</small><strong>{{ stats.total }}</strong></div><span class="stat-caption">All time</span></div>
+  <div class="stat-card"><span class="stat-icon orange">◷</span><div><small>Open issues</small><strong>{{ stats.open }}</strong></div><span class="stat-caption">Needs attention</span></div>
+  <div class="stat-card"><span class="stat-icon green">✓</span><div><small>Resolved</small><strong>{{ stats.resolved }}</strong></div><span class="stat-caption">Fixed issues</span></div>
+  <div class="stat-card"><span class="stat-icon red">!</span><div><small>Critical open</small><strong>{{ stats.critical }}</strong></div><span class="stat-caption">Prioritize now</span></div>
+</section>
+<section class="section-block">
+  <div class="section-heading"><div><div class="eyebrow">LIVE ACTIVITY</div><h2>Recently reported</h2></div>{% if current_user %}<a class="text-link" href="{{ url_for('dashboard') }}">View all reports →</a>{% endif %}</div>
+  {% if latest %}
+  <div class="table-wrap"><table><thead><tr><th>Issue</th><th>Location</th><th>Priority</th><th>Status</th><th>Reported</th></tr></thead><tbody>
+  {% for f in latest %}<tr><td><a class="issue-link" href="{{ url_for('fault_detail', fault_id=f.id) if current_user and (current_user.role in ['admin','staff'] or current_user.id == f.reporter_id) else url_for('login') }}">#{{ f.id }} · {{ f.title }}</a><small class="subline">{{ f.category }} · {{ f.reporter_name }}</small></td><td>{{ f.location }}{% if f.room %}<small class="subline">{{ f.room }}</small>{% endif %}</td><td><span class="priority {{ f.priority|lower }}">{{ f.priority }}</span></td><td><span class="status {{ f.status|lower|replace(' ','-') }}">{{ f.status }}</span></td><td>{{ f.created_at }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty-state"><div class="empty-icon">▤</div><h3>No reports yet</h3><p>When a fault is reported, it will appear here.</p></div>{% endif %}
+</section>
+<section class="how-section"><div class="section-heading"><div><div class="eyebrow">HOW IT WORKS</div><h2>From problem to solution</h2></div></div><div class="steps-grid">
+  <div class="step-card"><span>01</span><div class="step-icon">✎</div><h3>Report the issue</h3><p>Describe the fault, add its location, and attach a photo if helpful.</p></div>
+  <div class="step-card"><span>02</span><div class="step-icon">⚑</div><h3>Set the priority</h3><p>The system suggests a priority so urgent safety issues stand out.</p></div>
+  <div class="step-card"><span>03</span><div class="step-icon">✓</div><h3>Track the fix</h3><p>Follow status updates, staff notes, and the conversation thread.</p></div>
+</div></section>
+{% endblock %}

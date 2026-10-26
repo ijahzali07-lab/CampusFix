@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% block title %}Fault #{{ fault.id }}{% endblock %}{% block content %}
+<div class="breadcrumbs"><a href="{{ url_for('dashboard') }}">Dashboard</a><span>/</span><span>Fault #{{ fault.id }}</span></div>
+<div class="detail-heading"><div><div class="eyebrow">FAULT REPORT · #{{ fault.id }}</div><h1>{{ fault.title }}</h1><div class="detail-tags"><span class="priority {{ fault.priority|lower }}">{{ fault.priority }} priority</span><span class="status {{ fault.status|lower|replace(' ','-') }}">{{ fault.status }}</span></div></div><div class="detail-actions"><button class="btn secondary" type="button" onclick="window.print()">⇩ Print report</button><a class="btn secondary" href="{{ url_for('dashboard') }}">← Back</a></div></div>
+<div class="detail-layout"><div class="detail-main">
+<section class="panel"><div class="panel-heading"><h2>Issue overview</h2><span class="muted">Last updated {{ fault.updated_at }}</span></div><p class="description-text">{{ fault.description }}</p>{% if fault.photo %}<div class="photo-review-banner"><b>Photo review:</b> {{ fault.photo_review_status }}{% if fault.ai_flag %}<p><b>Photo screening warning:</b> {{ fault.ai_reason }}</p>{% elif fault.ai_reason %}<p><b>Automatic photo screening:</b> {{ fault.ai_reason }}</p>{% endif %}{% if fault.photo_review_status == 'Rejected - replace photo' %}<p>Please upload a relevant photo in a new report or contact staff for instructions.</p>{% elif fault.photo_review_status == 'Pending review' %}<p>Staff will check that this image is appropriate and relevant to the reported fault.</p>{% endif %}</div><div class="uploaded-photo-wrap"><a class="uploaded-photo-link" href="{{ url_for('uploaded_photo', filename=fault.photo) }}" target="_blank" rel="noopener"><img class="fault-photo" src="{{ url_for('uploaded_photo', filename=fault.photo) }}" alt="Photo attached to fault report" onerror="this.style.display='none';this.parentElement.style.display='none';document.getElementById('missing-photo-{{ fault.id }}').style.display='block';"></a><p id="missing-photo-{{ fault.id }}" class="photo-missing" style="display:none">This photo file is missing from the uploads folder. Please ask the reporter to upload it again.</p>
+{% if current_user and current_user.role in ['admin', 'staff'] %}
+<form method="post" action="{{ url_for('flag_invalid_photo', fault_id=fault.id) }}" class="flag-photo-form" onsubmit="return confirm('Flag this photo for administrator review?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label for="photo-flag-reason-{{ fault.id }}"><b>Is this photo invalid?</b></label>
+<div class="form-row" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+<select id="photo-flag-reason-{{ fault.id }}" name="reason" required aria-label="Reason for flagging photo">
+<option value="">Choose a reason</option><option>Irrelevant image</option><option>Meme or joke image</option><option>Inappropriate image</option><option>Duplicate or misleading evidence</option><option>Other concern</option>
+</select>
+<input type="text" name="details" maxlength="500" placeholder="Optional details" aria-label="Optional details">
+<button class="btn secondary" type="submit">⚑ Flag invalid photo</button>
+</div><small class="hint">This sends the report and student ID to the admin abuse-review queue. A flag is not proof of misuse.</small>
+</form>
+{% endif %}</div>{% endif %}{% if fault.resolution_note %}<div class="resolution-note"><b>Staff / resolution note</b><p>{{ fault.resolution_note }}</p></div>{% endif %}</section>
+<section class="panel"><div class="panel-heading"><h2>Discussion & updates</h2><span class="count-bubble">{{ comments|length }}</span></div><form method="post" class="comment-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><textarea name="message" required maxlength="1500" rows="3" placeholder="Add a useful update or ask a question..."></textarea><div class="form-actions"><small class="hint">Keep messages relevant to this report.</small><button class="btn primary" type="submit">Post update</button></div></form>
+{% if comments %}<div class="comment-list">{% for c in comments %}<div class="comment"><div class="avatar">{{ c.name[:1]|upper }}</div><div class="comment-body"><div class="comment-head"><b>{{ c.name }}</b><span class="role-label">{{ c.role|title }}</span><time>{{ c.created_at }}</time></div><p>{{ c.message }}</p></div></div>{% endfor %}</div>{% else %}<p class="muted no-comments">No updates yet. Add the first comment above.</p>{% endif %}</section>
+</div><aside class="detail-side">
+<section class="panel"><h3>Report information</h3><div class="info-list"><div><small>Category</small><b>{{ fault.category }}</b></div><div><small>Location</small><b>{{ fault.location }}</b></div><div><small>Room / spot</small><b>{{ fault.room or 'Not specified' }}</b></div><div><small>Reported by</small><b>{{ fault.reporter_name }}</b></div><div><small>Reported on</small><b>{{ fault.created_at }}</b></div><div><small>Assigned to</small><b>{{ fault.assigned_to or 'Not assigned' }}</b></div></div></section>
+{% if is_staff %}<section class="panel staff-panel">
+  <div class="staff-panel-heading">
+    <div class="staff-icon" aria-hidden="true">⚙</div>
+    <div><div class="eyebrow">STAFF CONTROLS</div><h3>Manage this fault</h3><p>Update progress and keep the reporter informed.</p></div>
+  </div>
+  <form method="post" action="{{ url_for('update_fault', fault_id=fault.id) }}" class="staff-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="staff-field-grid">
+      <label class="staff-field"><span>Status</span><select name="status">{% for s in statuses %}<option {% if fault.status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
+      <label class="staff-field"><span>Priority</span><select name="priority">{% for p in ['Critical','High','Medium','Low'] %}<option {% if fault.priority==p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></label>
+      <label class="staff-field staff-field-wide"><span>Assign to</span><input name="assigned_to" maxlength="100" value="{{ fault.assigned_to }}" placeholder="Enter staff member or team"></label>
+      <label class="staff-field staff-field-wide"><span>Photo review</span>{% if fault.photo %}<select name="photo_review_status">{% for review in ['Pending review','Approved','Rejected - replace photo'] %}<option {% if fault.photo_review_status==review %}selected{% endif %}>{{ review }}</option>{% endfor %}</select>{% else %}<input value="No photo attached" disabled>{% endif %}</label>
+      <label class="staff-field staff-field-wide"><span>Resolution note</span><textarea name="resolution_note" rows="4" maxlength="2000" placeholder="Describe work completed or the next action...">{{ fault.resolution_note }}</textarea></label>
+    </div>
+    <button class="btn primary full staff-save-btn" type="submit"><span>Save changes</span><span aria-hidden="true">→</span></button>
+  </form>
+</section>{% endif %}
+</aside></div>
+{% endblock %}

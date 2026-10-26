@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Abuse reports{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">ADMIN REVIEW</div><h1>Suspicious submission reports</h1><p>Review student IDs linked to photos flagged by automated screening. A flag is a signal for review, not proof of intentional misuse.</p></div></div>
+{% if flags %}
+<div class="panel" style="overflow-x:auto">
+<table class="data-table" style="width:100%;border-collapse:collapse">
+<thead><tr><th>Flag</th><th>Student ID</th><th>Student</th><th>Fault report</th><th>Reason</th><th>Flagged submissions</th><th>Review</th></tr></thead>
+<tbody>{% for f in flags %}
+<tr>
+<td>#{{ f.id }}<br><small>{{ f.created_at }}</small></td>
+<td><strong>{{ f.student_id }}</strong></td>
+<td>{{ f.student_name }}<br><small>{{ f.student_email }}</small></td>
+<td><a href="{{ url_for('fault_detail', fault_id=f.fault_id) }}">Fault #{{ f.fault_id }} · {{ f.title }}</a><br><small>{{ f.category }}</small>{% if f.photo %}<br><a href="{{ url_for('uploaded_photo', filename=f.photo) }}" target="_blank" rel="noopener">View photo</a>{% endif %}</td>
+<td>{{ f.reason }}</td><td>{{ f.flagged_count }}</td>
+<td><form method="post" style="min-width:190px;display:grid;gap:8px"><input type="hidden" name="csrf_token" value="{{ session.csrf_token }}"><input type="hidden" name="flag_id" value="{{ f.id }}"><select name="status">{% for status in ['Pending review','Confirmed misuse','No abuse found','Warning issued','Closed'] %}<option value="{{ status }}" {% if f.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select><textarea name="review_note" rows="2" placeholder="Admin review note">{{ f.review_note }}</textarea><button class="btn primary" type="submit">Save review</button></form><small>Current: {{ f.status }}</small></td>
+</tr>{% endfor %}</tbody></table>
+</div>
+{% else %}<div class="panel"><h2>No suspicious uploads flagged</h2><p class="muted">When automated photo screening flags a submission, its student ID will appear here for administrator review.</p></div>{% endif %}
+{% endblock %}

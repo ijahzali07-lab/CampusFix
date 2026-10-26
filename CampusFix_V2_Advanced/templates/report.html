@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% block title %}Report a fault<script>
+const photoInput = document.getElementById('faultPhoto');
+const photoPreview = document.getElementById('photoPreview');
+const photoMeta = document.getElementById('photoMeta');
+if (photoInput) photoInput.addEventListener('change', () => {
+  const file = photoInput.files && photoInput.files[0];
+  if (!file) { photoPreview.hidden = true; photoMeta.textContent = 'No photo selected'; return; }
+  photoMeta.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+  if (!file.type.startsWith('image/')) { photoPreview.hidden = true; photoMeta.textContent = 'Please choose an image file.'; return; }
+  const reader = new FileReader();
+  reader.onload = e => { photoPreview.src = e.target.result; photoPreview.hidden = false; };
+  reader.readAsDataURL(file);
+});
+</script>
+{% endblock %}{% block content %}
+<div class="page-heading"><div><div class="eyebrow">NEW MAINTENANCE REQUEST</div><h1>Report a fault</h1><p>Give the maintenance team enough detail to understand and locate the problem.</p></div><a class="btn secondary" href="{{ url_for('dashboard') }}">← Back to dashboard</a></div>
+<form class="form-card report-form" method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<div class="form-section-title"><span>01</span><div><h3>Issue details</h3><p>What is broken or needs attention?</p></div></div>
+<div class="form-grid"><label class="span-2">Issue title *<input name="title" required maxlength="140" placeholder="e.g. Ceiling fan making noise"></label><label>Category *<select name="category" required><option value="">Choose category</option>{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select></label><label>Location *<select name="location" required><option value="">Choose location</option>{% for l in locations %}<option>{{ l }}</option>{% endfor %}</select></label><label>Room / exact spot<input name="room" maxlength="80" placeholder="e.g. Block B, Room 204"></label><label class="span-2">Description *<textarea name="description" rows="5" required maxlength="3000" placeholder="Explain what happened, when you noticed it, and whether anyone may be at risk."></textarea><small class="hint">For immediate danger, alert campus security or the responsible staff directly.</small></label><label class="span-2">Photo evidence (optional)<input id="faultPhoto" type="file" name="photo" accept=".png,.jpg,.jpeg,.webp"><small class="hint">PNG, JPG, JPEG or WEBP · Maximum 5 MB. Use a clear photo of the issue. Staff will verify relevance.</small><span id="photoMeta" class="photo-meta">No photo selected</span><img id="photoPreview" class="photo-preview" alt="Selected photo preview" hidden></label></div>
+<div class="priority-info"><span>✦</span><div><b>Priority is suggested automatically</b><p>The system checks the category and description for urgency keywords. Staff can adjust it after reviewing.</p></div></div>
+<div class="form-actions"><a class="text-link" href="{{ url_for('dashboard') }}">Cancel</a><button class="btn primary" type="submit">Submit fault report →</button></div>
+</form>
+<script>
+const photoInput = document.getElementById('faultPhoto');
+const photoPreview = document.getElementById('photoPreview');
+const photoMeta = document.getElementById('photoMeta');
+if (photoInput) photoInput.addEventListener('change', () => {
+  const file = photoInput.files && photoInput.files[0];
+  if (!file) { photoPreview.hidden = true; photoMeta.textContent = 'No photo selected'; return; }
+  photoMeta.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+  if (!file.type.startsWith('image/')) { photoPreview.hidden = true; photoMeta.textContent = 'Please choose an image file.'; return; }
+  const reader = new FileReader();
+  reader.onload = e => { photoPreview.src = e.target.result; photoPreview.hidden = false; };
+  reader.readAsDataURL(file);
+});
+</script>
+{% endblock %}
